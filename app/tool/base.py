@@ -7,9 +7,6 @@ class BaseTool(ABC, BaseModel):
     description: str
     parameters: Optional[dict] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-
     async def __call__(self, **kwargs) -> Any:
         """Execute the tool with given parameters."""
         return await self.execute(**kwargs)
