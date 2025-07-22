@@ -1,0 +1,34 @@
+{
+    "biubiu":{
+        "thinkmodel":{
+            "name":"deepseek-r1 ",
+            "model":"deepseek-reasoner",
+            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "base_url":"https://api.deepseek.com",
+            "max_tokens":4096,
+            "temperature":1.0
+        },
+        "excutemodel":{
+            "name":"deepseek-v3",
+            "model":"deepseek-chat",
+            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "base_url":"https://api.deepseek.com",
+            "max_tokens":4096,
+            "temperature":0.2
+        },
+        "thinkmemory":{
+            "max_context_size":10
+        },
+        "excutememory":{
+            "max_context_size":10
+        },
+        "tools":{
+            "Demo":{
+                "transport":"stdio",
+                "command":"/Users/niuzhenqian/Library/Python/webui-3.11/bin/python",
+                "args":["-m","demo"],
+                "env":{"PYTHONPATH":"/Users/niuzhenqian/myCodeSpace/mypythonspace/py11demo"}
+            }
+        }
+    }
+}

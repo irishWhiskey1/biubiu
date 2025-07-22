@@ -1,6 +1,6 @@
 import unittest
 import asyncio
-from app.llm.deepseek import DeepSeek
+from app.llm.excutemodel import DeepSeek
 
 class TestDeepSeek(unittest.TestCase):
     def test_execute(self):
