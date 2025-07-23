@@ -36,7 +36,7 @@ class Biubiu(BaseAgent):
         self.thinkMemory.set_context([{'role':'system','content':thinkPrompt}])
 
         # 初始化执行模型的记忆
-        excutePrompt = '你是一个任务流程执行器，你只可以严格按照下面所给出的任务步骤进行决策和执行，当没给出任务步骤时，你可以自由发挥'
+        excutePrompt = '你是一个任务流程执行器，你只可以严格按照下面所给出的任务步骤进行决策和执行，当没给出任务步骤时，你可以自由发挥,不过最后步骤必须调用Excuter'
         self.excuteMemory.set_context([{'role':'system','content':excutePrompt}])
         self.stack = stack
     # async def __aenter__(self):
@@ -79,10 +79,9 @@ class Biubiu(BaseAgent):
             return await self.excuteModel.execute(self.excuteMemory.get_context(),None)
 
         for step in thinkSteps:
-            logger.info(f"step:{step['stepNum']}, 使用工具: {step['useTool']}, 目的: {step['purpose']}")
             await self.__excute(query,step)
-        
-        return self.excuteMemory.get_context()[-1].get('content',None)
+        return ""
+        # return self.excuteMemory.get_context()[-1].get('content',None)
     async def __think(self,query:str):
         queryPrompt = f'请规划下面的问题：{query}'
         self.thinkMemory.set_context([{'role':'user','content':queryPrompt}])
@@ -91,8 +90,10 @@ class Biubiu(BaseAgent):
         thinkSteps = json.loads(llmResp)['steps']
         if len(thinkSteps) == 0:
             return
+        logger.info(f"我将通过以下步骤来完成这个工作")
         for step in thinkSteps:
            logger.info(f"step:{step['stepNum']}, 使用工具: {step['useTool']}, 目的: {step['purpose']}")
+        logger.info(f"---------------------------------------------------------------------")
         return thinkSteps
     async def __excute(self,query:str,thinkStep:dict):
         stepNum = thinkStep['stepNum']
@@ -110,10 +111,14 @@ class Biubiu(BaseAgent):
         funcCallList = llmResp['tool_calls']
         if len(funcCallList) == 0:
             self.excuteMemory.set_context([{'role':'assistant','content':llmResp['content']}])
+            logger.info(f"{llmResp['content']}")
+            logger.info(f"---------------------------------------------------------------------")
             return
         for funcCall in funcCallList:
             mcpTool = [tool for tool in self.mcpTools if tool.name == stepToolName][0]
             funcResp = await mcpTool.execute(funcCall["args"])
             self.excuteMemory.set_context([{'role':'assistant','content':f'{funcResp}'}])
 
+            logger.info(f"执行工具：{funcCall['name']} 得到结果：{funcResp.content[0].text}")
+            logger.info(f"---------------------------------------------------------------------")
         return
