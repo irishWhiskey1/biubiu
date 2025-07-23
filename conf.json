@@ -3,15 +3,15 @@
         "thinkmodel":{
             "name":"deepseek-r1 ",
             "model":"deepseek-reasoner",
-            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "api_key":"you-api-key",
             "base_url":"https://api.deepseek.com",
             "max_tokens":4096,
-            "temperature":1.0
+            "temperature":0.0
         },
         "excutemodel":{
             "name":"deepseek-v3",
             "model":"deepseek-chat",
-            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "api_key":"you-api-key",
             "base_url":"https://api.deepseek.com",
             "max_tokens":4096,
             "temperature":0.2
@@ -23,11 +23,20 @@
             "max_context_size":10
         },
         "tools":{
-            "Demo":{
-                "transport":"stdio",
-                "command":"/Users/niuzhenqian/Library/Python/webui-3.11/bin/python",
-                "args":["-m","demo"],
-                "env":{"PYTHONPATH":"/Users/niuzhenqian/myCodeSpace/mypythonspace/py11demo"}
+            "jina":{
+                "transport": "stdio",
+                "command": "uv",
+                "args": [ 
+                    "--directory",
+                    "/Users/niuzhenqian/myCodeSpace/mypythonspace/jina/mcp-server",
+                    "run",
+                    "main.py"
+                ],
+                "env": {
+                    "JINA_API_KEY": "you-jina-api-key",
+                    "GOOGLE_AI_STUDIO_KEY": "you-google-api-key",
+                    "PYTHONIOENCODING":"utf-8"
+                }
             }
         }
     }
