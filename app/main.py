@@ -8,7 +8,6 @@ async def main():
     agent = await Biubiu.create(conf=conf)
     query = input('请输入你的问题:')
     await agent.run(query)
-    # print(answer)
     await agent.close()
 
 if __name__ == '__main__':

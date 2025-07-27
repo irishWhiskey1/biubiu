@@ -1,29 +1,50 @@
 from typing import Optional, Any
 from mcp import ClientSession
 from contextlib import AsyncExitStack
-
+from typing import Any, Dict
 
 from app.tool.base import BaseTool
 from app.tool.session import Connection,_create_stdio_session,DEFAULT_ENCODING,DEFAULT_ENCODING_ERROR_HANDLER
 
 class MCPTool(BaseTool):
+    # MCP工具名称
     name: str
-    description: str
-    parameters: Optional[dict] = None
+    # 和MCP工具建立通信的客户端
     session: Optional[ClientSession] = None
-
-    def __init__(self,session: Optional[ClientSession],name: str,description: str,parameters: dict):
+    # 对该MCP工具的描述
+    # 其中key为工具名称，value为工具的描述
+    descriptions: dict = None
+    # 该MCP工具的参数
+    # 其中key为工具名称，value为工具的参数
+    parameters:dict = None
+    def __init__(self,session: Optional[ClientSession],name: str,descriptions: dict,parameters: dict):
         if session is None:
             raise ValueError("A session must be provided")
         self.session = session
         self.name = name
-        self.description = description
+        self.descriptions = descriptions
         self.parameters = parameters
 
     """MCP Tool 调用方法"""
-    async def execute(self, kwargs) -> Any:
-       resp = await self.session.call_tool(self.name, kwargs)
+    async def execute(self,toolName:str, kwargs) -> Any:
+       if toolName not in self.descriptions:
+           raise ValueError("toolName not found")
+       resp = await self.session.call_tool(toolName, kwargs)
        return resp
+    """获取MCP某个工具的参数"""
+    def to_param(self,toolName :str) -> Dict:
+        function_name = f"{self.name}-{toolName}"
+        return {
+            "type": "function",
+            "function": {
+                "name": function_name,
+                "description": self.descriptions.get(toolName,None),
+                "parameters": {
+                   "type": "object",
+                   "properties": self.parameters.get(toolName,None),
+                }
+            },
+        }
 
 async def InitMCPTools(connConfigs:dict[str,Connection], stack:AsyncExitStack)->list[MCPTool]:
     mcpTools = []
@@ -52,13 +73,23 @@ async def InitMCPTools(connConfigs:dict[str,Connection], stack:AsyncExitStack)->
             session_kwargs=config.get("session_kwargs",None),))
         await session.initialize()
         tools_response = await session.list_tools()
+        descriptions = {}
+        parameters = {}
         for tool in tools_response.tools:
-            mcpTool = MCPTool(session,tool.name,tool.description,tool.inputSchema['properties'])
-            mcpTools.append(mcpTool)
+            descriptions[tool.name] = tool.description
+            parameters[tool.name] = tool.inputSchema['properties']
+
+        mcpTool = MCPTool(session,confName,descriptions,parameters)
+        mcpTools.append(mcpTool)
+
     return mcpTools
 
-def GetMCPToolsDescription(tools:list[MCPTool])->str:
-    str = f"1、Excuter：大语言模型，负责内容总结、汇总、生成等工作，并且可以使用function call 产生其他工具的入参\r\n"
-    for index,tool in enumerate(tools):
-       str += f"{index+2}、{tool.name}：{tool.description}\r\n"
+def GetMCPToolsDescription(mcpTools:list[MCPTool])->str:
+    str = f"1、Excuter：通用大语言模型，负责内容总结、汇总、生成等工作，并且可以使用function call 产生其他工具的入参\r\n"
+    index = 2
+    for mcpTool in mcpTools:
+        for toolName,toolDescription in mcpTool.descriptions.items():
+            str += f"{index}、{mcpTool.name}-{toolName}:{toolDescription}\r\n"
+            index += 1
+
     return str
