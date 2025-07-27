@@ -3,7 +3,7 @@
         "thinkmodel":{
             "name":"deepseek-r1 ",
             "model":"deepseek-reasoner",
-            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "api_key":"you-api-key",
             "base_url":"https://api.deepseek.com",
             "max_tokens":4096,
             "temperature":0.0
@@ -11,7 +11,7 @@
         "excutemodel":{
             "name":"deepseek-v3",
             "model":"deepseek-chat",
-            "api_key":"sk-ac7c513428394dc0a5418eafd6858e34",
+            "api_key":"you-api-key",
             "base_url":"https://api.deepseek.com",
             "max_tokens":4096,
             "temperature":0.2
@@ -33,8 +33,8 @@
                     "main.py"
                 ],
                 "env": {
-                    "JINA_API_KEY": "jina_b64db9f29ba64242acf409cc69a6a4a2N7jRxU7k6HQ7RgOdRPClfuRnezMN",
-                    "GOOGLE_AI_STUDIO_KEY": "AIzaSyDXyCSoJSiEYEatWFkEn9uOERh6iiwN_Fc",
+                    "JINA_API_KEY": "you-jina-api-key",
+                    "GOOGLE_AI_STUDIO_KEY": "you-google-api-key",
                     "PYTHONIOENCODING":"utf-8"
                 }
             }
