@@ -32,15 +32,13 @@ class Biubiu(BaseAgent):
         # 初始化思考模型的记忆
         thinkPrompt = '你是一个任务流程规划器，你可以使用的工具有：\r\n'
         thinkPrompt += GetMCPToolsDescription(self.mcpTools)
-        thinkPrompt += '输出格式为json，例子为' + '{"steps":[{"stepNum":1,"useTool":Searcher,"purpose":"搜集资料"}]}'
+        thinkPrompt += '输出格式为json，例子为' + '{"steps":[{"stepNum":1,"useTool":"Searcher","purpose":"搜集资料"}]}'
         self.thinkMemory.set_context([{'role':'system','content':thinkPrompt}])
 
         # 初始化执行模型的记忆
         excutePrompt = '你是一个任务流程执行器，你只可以严格按照下面所给出的任务步骤进行决策和执行，当没给出任务步骤时，你可以自由发挥,不过最后步骤必须调用Excuter'
         self.excuteMemory.set_context([{'role':'system','content':excutePrompt}])
         self.stack = stack
-    # async def __aenter__(self):
-    #     return self
 
     async def close(self):
         await self.stack.aclose()
@@ -83,6 +81,7 @@ class Biubiu(BaseAgent):
         return ""
         # return self.excuteMemory.get_context()[-1].get('content',None)
     async def __think(self,query:str):
+        """现阶段，在任务规划中，一个步骤只能调用一个工具"""
         queryPrompt = f'请规划下面的问题：{query}'
         self.thinkMemory.set_context([{'role':'user','content':queryPrompt}])
         llmResp = await self.thinkModel.execute(self.thinkMemory.get_context(),None)
@@ -103,10 +102,17 @@ class Biubiu(BaseAgent):
         if stepToolName == 'Excuter':
             self.excuteMemory.set_context([{'role':'system','content':f'根据上述内容，解决一下问题：{query}'}])
         else:
-            mcpTool = [tool for tool in self.mcpTools if tool.name == stepToolName][0]
+            # 处理新的工具名称格式(使用下划线分隔)
+            parts = stepToolName.split('-')
+            stepMcpName = ""
+            callableToolName = ""
+            if len(parts) > 1:
+                stepMcpName = parts[0]
+                callableToolName = parts[1]
+            mcpTool = [tool for tool in self.mcpTools if tool.name == stepMcpName][0]
             funcCallPrompt = f'步骤{stepNum}：结合上面的内容，使用{stepToolName}工具，目的{stepPurpose}'
             self.excuteMemory.set_context([{'role':'system','content':funcCallPrompt}])
-            funcs = [mcpTool.to_param()]
+            funcs = [mcpTool.to_param(callableToolName)]
         llmResp = await self.excuteModel.execute(self.excuteMemory.get_context(),funcs)
         funcCallList = llmResp['tool_calls']
         if len(funcCallList) == 0:
@@ -115,10 +121,19 @@ class Biubiu(BaseAgent):
             logger.info(f"---------------------------------------------------------------------")
             return
         for funcCall in funcCallList:
-            mcpTool = [tool for tool in self.mcpTools if tool.name == stepToolName][0]
-            funcResp = await mcpTool.execute(funcCall["args"])
-            self.excuteMemory.set_context([{'role':'assistant','content':f'{funcResp}'}])
+            funcCallName = funcCall['name']
 
-            logger.info(f"执行工具：{funcCall['name']} 得到结果：{funcResp.content[0].text}")
+            # 处理新的工具名称格式(使用下划线分隔)
+            parts = funcCallName.split('-')
+            stepMcpName = ""
+            callableToolName = ""
+            if len(parts) > 1 :
+                stepMcpName = parts[0]
+                callableToolName = parts[1]
+            mcpTool = [tool for tool in self.mcpTools if tool.name == stepMcpName][0]
+            funcResp = await mcpTool.execute(callableToolName,funcCall["args"])
+            self.excuteMemory.set_context([{'role':'assistant','content':f'{funcResp.content[0].text}'}])
+
+            logger.info(f"执行工具：{funcCallName} 得到结果：{funcResp.content[0].text}")
             logger.info(f"---------------------------------------------------------------------")
         return

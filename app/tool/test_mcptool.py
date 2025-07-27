@@ -1,6 +1,6 @@
 import unittest
 import asyncio
-from app.tool.mcptool import InitMCPTools
+from app.tool.mcptool import InitMCPTools,GetMCPToolsDescription
 from contextlib import AsyncExitStack
 
 class TestInitMCPTools(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestInitMCPTools(unittest.TestCase):
         async def run_test():
             async with AsyncExitStack() as stack:
                 tools = await InitMCPTools({
-                    "demo": {
+                    "jino": {
                         "transport": "stdio",
                         "command": "uv",
                         "args": [ 
@@ -23,10 +23,9 @@ class TestInitMCPTools(unittest.TestCase):
                         }
                     }
                 }, stack)
-                print(tools[0].to_param())
-                print(tools[0].name)
-                # resp = await tools[0].execute({"a":1, "b":1})
-                # print(resp)
+                print(GetMCPToolsDescription(tools))
+                resp = await tools[0].execute("search",{"q":"gta5"})
+                print(resp)
         asyncio.run(run_test())
 if __name__ == '__main__':
     unittest.main()
